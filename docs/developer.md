@@ -37,7 +37,7 @@ goreleaser release --clean
 This will create a new release under Releases and also make it available via Homebrew.
 
 
-### Accessing SQLite
+### Use SQLite
 When running MCPJungle with SQLite, you can access the database using the `sqlite3` command line tool.
 
 ```bash
@@ -50,7 +50,7 @@ sqlite3 mcp.db
 # and so on...
 ```
 
-### Accessing PostgreSQL
+### Use PostgreSQL
 When running MCPJungle with docker-compose, you can access the PostgreSQL database using the `pgadmin` utility.
 
 Open `http://localhost:5050` in your browser and log in with the Username `admin@admin.com` and Password `admin`.
@@ -63,3 +63,12 @@ Add a new DB Server with the following settings:
 - Database: `mcpjungle`
 
 Then you can open up tables and run queries.
+
+### Use MCP Inspector
+MCP Inspector is a GUI MCP client to test out all interactions with MCP servers.
+
+Very useful for debugging and testing mcpjungle.
+
+```bash
+npx @modelcontextprotocol/inspector
+```

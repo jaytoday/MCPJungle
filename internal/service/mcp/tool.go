@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mcpjungle/mcpjungle/internal/model"
 	"github.com/mcpjungle/mcpjungle/internal/types"
+	"log"
 )
 
 // ListTools returns all tools registered in the registry.
@@ -144,6 +145,8 @@ func (m *MCPService) registerServerTools(ctx context.Context, s *model.McpServer
 		return fmt.Errorf("failed to fetch tools from MCP server %s: %w", s.Name, err)
 	}
 	for _, tool := range resp.Tools {
+		canonicalToolName := mergeServerToolNames(s.Name, tool.GetName())
+
 		// extracting json schema is currently on best-effort basis
 		// if it fails, we log the error and continue with the next tool
 		jsonSchema, _ := json.Marshal(tool.InputSchema)
@@ -155,15 +158,13 @@ func (m *MCPService) registerServerTools(ctx context.Context, s *model.McpServer
 			InputSchema: jsonSchema,
 		}
 		if err := m.db.Create(t).Error; err != nil {
-			// TODO: Add error log about this failure
 			// If registration of a tool fails, we should not fail the entire server registration.
 			// Instead, continue with the next tool.
-
-			//fmt.Printf("failed to register tool %s in DB: %w", mergeServerToolNames(s.Name, t.Name), err)
+			log.Printf("[ERROR] failed to register tool %s in DB: %v", canonicalToolName, err)
 		} else {
 			// Set tool name to include the server name prefix to make it recognizable by MCPJungle
-			tool.Name = mergeServerToolNames(s.Name, tool.Name)
-			// add the tool to the MCP proxy server
+			// then add the tool to the MCP proxy server
+			tool.Name = canonicalToolName
 			m.mcpProxyServer.AddTool(tool, m.mcpProxyToolCallHandler)
 		}
 	}
