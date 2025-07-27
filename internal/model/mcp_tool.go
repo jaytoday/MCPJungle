@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Tool represents a tool provided by an MCP server.
 type Tool struct {
 	gorm.Model
 
