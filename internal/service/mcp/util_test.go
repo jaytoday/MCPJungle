@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -11,9 +12,17 @@ func TestValidateServerName(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid name", "server_1", false},
+		{"valid name", "server_2_multiple_underscores", false},
 		{"valid hyphen", "server-2", false},
+		{"trailing underscore", "_server_", true},
+		{"only underscore", "_", true},
 		{"invalid slash", "server/3", true},
 		{"invalid special char", "server$", true},
+		{"double underscore", "server__name", true},
+		{"double underscore", "__server", true},
+		{"double underscore", "server__", true},
+		{"only double underscore", "__", true},
+		{"triple underscore", "server___name", true},
 		{"empty", "", true},
 	}
 	for _, tt := range tests {
@@ -32,11 +41,15 @@ func TestMergeServerToolNames(t *testing.T) {
 		tool   string
 		want   string
 	}{
-		{"myserver", "mytool", "myserver/mytool"},
-		{"myserver", "my/tool", "myserver/my/tool"},
+		{"myserver", "mytool", "myserver__mytool"},
+		{"myserver", "my/tool", "myserver__my/tool"},
+		{"_myserver", "mytool", "_myserver__mytool"},
+		{"my_server", "my_tool", "my_server__my_tool"},
+		{"my-server", "my-tool", "my-server__my-tool"},
 	}
 	for _, tt := range tests {
-		t.Run(tt.server+"_"+tt.tool, func(t *testing.T) {
+		caseName := fmt.Sprintf("server:%s,tool: %s", tt.server, tt.tool)
+		t.Run(caseName, func(t *testing.T) {
 			got := mergeServerToolNames(tt.server, tt.tool)
 			if got != tt.want {
 				t.Errorf("mergeServerToolNames(%q, %q) = %q, want %q", tt.server, tt.tool, got, tt.want)
@@ -52,8 +65,10 @@ func TestSplitServerToolName(t *testing.T) {
 		wantTool   string
 		wantOK     bool
 	}{
-		{"server/tool", "server", "tool", true},
-		{"a/b/c", "a", "b/c", true},
+		{"server__tool", "server", "tool", true},
+		{"a__b/c", "a", "b/c", true},
+		{"a__b__c", "a", "b__c", true},
+		{"_abc__def", "_abc", "def", true},
 		{"no_separator", "", "", false},
 	}
 	for _, tt := range tests {

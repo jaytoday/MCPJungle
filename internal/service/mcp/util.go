@@ -15,19 +15,31 @@ import (
 	"syscall"
 )
 
-const serverToolNameSep = "/"
+// serverToolNameSep is the separator used to combine server name and tool name.
+// This combination produces the canonical name that uniquely identifies a tool across MCPJungle.
+const serverToolNameSep = "__"
 
 // Only allow letters, numbers, hyphens, and underscores
 var validServerName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
-// validServerName checks if the server name is valid.
-// Server name must not contain slashes '/'
-// Tools in mcpjungle are identified by `<server_name>/<tool_name>` (eg- `github/git_commit`)
-// When a tool is invoked, the text before the first slash is treated as the server name.
-// eg- In `aws/ec2/create_sg`, `aws` is the MCP server's name and `ec2/create_sg` is the tool.
+// validateServerName checks if the server name is valid.
+// Server name must not contain double underscores `__`.
+// Tools in mcpjungle are identified by `<server_name>__<tool_name>` (eg- `github__git_commit`)
+// When a tool is invoked, the text before the first __ is treated as the server name.
+// eg- In `aws__ec2__create_sg`, `aws` is the MCP server's name and `ec2__create_sg` is the tool.
 func validateServerName(name string) error {
 	if !validServerName.MatchString(name) {
-		return fmt.Errorf("invalid server name: '%s' must not contain slashes or special characters", name)
+		return fmt.Errorf("invalid server name: '%s' must follow the regular expression %s", name, validServerName)
+	}
+	if strings.Contains(name, serverToolNameSep) {
+		return fmt.Errorf("invalid server name: '%s' must not contain multiple consecutive underscores", name)
+	}
+	if strings.HasSuffix(name, string(serverToolNameSep[0])) {
+		// Don't allow a trailing underscore in server name.
+		// This avoids situations like this: `aws_` + `ec2_create_sg` -> `aws___ec2_create_sg`
+		//  splitting this would result in: `aws` + `_ec2_create_sg` because we always split on
+		//  the first occurrence of `__`
+		return fmt.Errorf("invalid server name: '%s' must not end with an underscore", name)
 	}
 	return nil
 }

@@ -108,19 +108,20 @@ All tools provided by this server are now accessible via MCPJungle:
 $ mcpjungle list tools
 
 # Check tool usage
-$ mcpjungle usage calculator/multiply
+$ mcpjungle usage calculator__multiply
 
 # Call a tool
-$ mcpjungle invoke calculator/multiply --input '{"a": 100, "b": 50}'
+$ mcpjungle invoke calculator__multiply --input '{"a": 100, "b": 50}'
 
 ```
 
 ![Call a tool via MCPJungle Proxy MCP server](./assets/tool-call.png)
 
 > [!NOTE]
-> A tool in MCPJungle must be referred to by its canonical name which follows the pattern `<mcp-server-name>/<tool-name>`.
+> A tool in MCPJungle must be referred to by its canonical name which follows the pattern `<mcp-server-name>__<tool-name>`.
+> Server name and tool name are separated by a double underscore `__`.
 >
-> eg- If you register a MCP server `github` which provides a tool called `git_commit`, you can invoke it in MCPJungle using the name `github/git_commit`.
+> eg- If you register a MCP server `github` which provides a tool called `git_commit`, you can invoke it in MCPJungle using the name `github__git_commit`.
 > 
 > Your AI Agent must also use this canonical name to call the tool via MCPJungle.
 
