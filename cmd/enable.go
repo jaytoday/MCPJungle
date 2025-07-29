@@ -10,7 +10,7 @@ var enableCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Enable an MCP server or tool globally",
 	Long: "Specify the name of a tool or MCP server to enable it in the mcp proxy.\n" +
-		"If a server is specified, all tools provided by that server will be enabled." +
+		"If a server is specified, all tools provided by that server will be enabled.\n" +
 		"If a tool is enabled, it can be viewed and called by mcp clients.",
 	RunE: runEnableTools,
 }
