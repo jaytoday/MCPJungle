@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/mark3labs/mcp-go/client"
@@ -51,13 +52,7 @@ func mergeServerToolNames(s, t string) string {
 
 // splitServerToolName splits the unique tool name into server name and tool name.
 func splitServerToolName(name string) (string, string, bool) {
-	serverName, toolName, ok := strings.Cut(name, serverToolNameSep)
-	if !ok {
-		// there is no separator in tool name, we cannot extract mcp server name
-		// this is invalid input
-		return "", "", false
-	}
-	return serverName, toolName, true
+	return strings.Cut(name, serverToolNameSep)
 }
 
 // isLoopbackURL returns true if rawURL resolves to a loopback address.
@@ -119,4 +114,25 @@ func createMcpServerConn(ctx context.Context, s *model.McpServer) (*client.Clien
 	}
 
 	return c, nil
+}
+
+// convertToolModelToMcpObject converts a tool model from the database to a mcp.Tool object
+func convertToolModelToMcpObject(t *model.Tool) (mcp.Tool, error) {
+	mcpTool := mcp.Tool{
+		Name:        t.Name,
+		Description: t.Description,
+	}
+
+	var inputSchema mcp.ToolInputSchema
+	if err := json.Unmarshal(t.InputSchema, &inputSchema); err != nil {
+		return mcp.Tool{}, fmt.Errorf(
+			"failed to unmarshal input schema %s for tool %s: %w", t.InputSchema, t.Name, err,
+		)
+	}
+	mcpTool.InputSchema = inputSchema
+
+	// TODO: Add other attributes to the tool, such as annotations
+	// NOTE: if more fields are added to the tool in DB, they should be set here as well
+
+	return mcpTool, nil
 }

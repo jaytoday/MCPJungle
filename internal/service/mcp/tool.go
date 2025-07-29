@@ -67,7 +67,7 @@ func (m *MCPService) GetTool(name string) (*model.Tool, error) {
 	if err := m.db.Where("server_id = ? AND name = ?", s.ID, toolName).First(&tool).Error; err != nil {
 		return nil, fmt.Errorf("failed to get tool %s from DB: %w", name, err)
 	}
-	// set the tool name back to the full name including server name
+	// set the tool name back to its canonical form
 	tool.Name = name
 	return &tool, nil
 }
@@ -135,6 +135,110 @@ func (m *MCPService) InvokeTool(ctx context.Context, name string, args map[strin
 		Content: contentList,
 	}
 	return result, nil
+}
+
+// EnableTools enables one or more tools.
+// If the entity is a tool name, only that tool is enabled.
+// If the entity is a server name, all tools of that server are enabled.
+// The function returns a list of enabled tool names.
+// If the tool or server does not exist, it returns an error.
+// If the tool is already enabled, it returns the tool name without an error.
+func (m *MCPService) EnableTools(entity string) ([]string, error) {
+	return m.setToolsEnabled(entity, true)
+}
+
+// DisableTools disables one or more tools.
+// If the entity is a tool name, only that tool is disabled.
+// If the entity is a server name, all tools of that server are disabled.
+// The function returns a list of disabled tool names.
+// If the tool or server does not exist, it returns an error.
+// If the tool is already disabled, it returns the tool name without an error.
+func (m *MCPService) DisableTools(entity string) ([]string, error) {
+	return m.setToolsEnabled(entity, false)
+}
+
+// setToolsEnabled does the heavy lifting of enabling or disabling one or more tools.
+func (m *MCPService) setToolsEnabled(entity string, enabled bool) ([]string, error) {
+	serverName, toolName, ok := splitServerToolName(entity)
+	if ok {
+		// splitting was successful, so the entity is a tool name
+		// only this tool needs to be enabled/disabled
+		s, err := m.GetMcpServer(serverName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get MCP server %s: %w", serverName, err)
+		}
+
+		var tool model.Tool
+		if err := m.db.Where("server_id = ? AND name = ?", s.ID, toolName).First(&tool).Error; err != nil {
+			return nil, fmt.Errorf("failed to get tool %s: %w", entity, err)
+		}
+
+		if tool.Enabled == enabled {
+			return []string{entity}, nil // no change needed
+		}
+
+		tool.Enabled = enabled
+		if err := m.db.Save(&tool).Error; err != nil {
+			return nil, fmt.Errorf("failed to set tool %s enabled=%t: %w", entity, enabled, err)
+		}
+
+		if enabled {
+			// if the tool was enabled, add it back to the MCP proxy server
+			mcpTool, err := convertToolModelToMcpObject(&tool)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert tool model to MCP object for tool %s: %w", tool.Name, err)
+			}
+			// set the tool name to its canonical form in the proxy
+			mcpTool.Name = entity
+			m.mcpProxyServer.AddTool(mcpTool, m.mcpProxyToolCallHandler)
+		} else {
+			// if the tool was disabled, remove it from the MCP proxy server
+			m.mcpProxyServer.DeleteTools(entity)
+		}
+
+		return []string{entity}, nil
+	}
+
+	// splitting was unsuccessful, so the entity is a server name
+	// all tools of this server need to be enabled/disabled
+	s, err := m.GetMcpServer(entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MCP server %s: %w", serverName, err)
+	}
+
+	var tools []model.Tool
+	if err := m.db.Where("server_id = ?", s.ID).Find(&tools).Error; err != nil {
+		return nil, fmt.Errorf("failed to get tools for server %s: %w", entity, err)
+	}
+
+	var changedToolNames []string
+	for i := range tools {
+		if tools[i].Enabled == enabled {
+			continue // no change needed
+		}
+		tools[i].Enabled = enabled
+		if err := m.db.Save(&tools[i]).Error; err != nil {
+			return nil, fmt.Errorf("failed to set tool %s enabled=%t: %w", tools[i].Name, enabled, err)
+		}
+		canonicalToolName := mergeServerToolNames(s.Name, tools[i].Name)
+
+		if enabled {
+			mcpTool, err := convertToolModelToMcpObject(&tools[i])
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert tool model to MCP object for tool %s: %w", tools[i].Name, err)
+			}
+			// set the tool name to its canonical form in the proxy
+			mcpTool.Name = canonicalToolName
+
+			m.mcpProxyServer.AddTool(mcpTool, m.mcpProxyToolCallHandler)
+		} else {
+			m.mcpProxyServer.DeleteTools(canonicalToolName)
+		}
+
+		changedToolNames = append(changedToolNames, canonicalToolName)
+	}
+
+	return changedToolNames, nil
 }
 
 // registerServerTools fetches all tools from an MCP server and registers them in the DB.

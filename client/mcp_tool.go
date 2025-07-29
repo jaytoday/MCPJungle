@@ -18,6 +18,7 @@ type ToolInputSchema struct {
 // Tool represents a tool provided by an MCP Server registered in the registry.
 type Tool struct {
 	Name        string          `json:"name"`
+	Enabled     bool            `json:"enabled"`
 	Description string          `json:"description"`
 	InputSchema ToolInputSchema `json:"input_schema"`
 }
@@ -51,6 +52,66 @@ func (c *Client) ListTools(server string) ([]*Tool, error) {
 	var tools []*Tool
 	if err := json.NewDecoder(resp.Body).Decode(&tools); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return tools, nil
+}
+
+// EnableTools enables a tool or all tools provided by an MCP server.
+func (c *Client) EnableTools(name string) ([]string, error) {
+	u, _ := c.constructAPIEndpoint("/tools/enable")
+	req, err := c.newRequest(http.MethodPost, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("entity", name)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to %s: %w", req.URL.String(), err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("request failed with status: %d, message: %s", resp.StatusCode, body)
+	}
+
+	var tools []string
+	if err := json.NewDecoder(resp.Body).Decode(&tools); err != nil {
+		return nil, fmt.Errorf("failed to decode API response: %w", err)
+	}
+	return tools, nil
+}
+
+// DisableTools disables a tool or all tools provided by an MCP server.
+func (c *Client) DisableTools(name string) ([]string, error) {
+	u, _ := c.constructAPIEndpoint("/tools/disable")
+	req, err := c.newRequest(http.MethodPost, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("entity", name)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to %s: %w", req.URL.String(), err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("request failed with status: %d, message: %s", resp.StatusCode, body)
+	}
+
+	var tools []string
+	if err := json.NewDecoder(resp.Body).Decode(&tools); err != nil {
+		return nil, fmt.Errorf("failed to decode API response: %w", err)
 	}
 	return tools, nil
 }
