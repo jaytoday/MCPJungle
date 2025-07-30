@@ -4,6 +4,16 @@ This document contains notes for Developers and Contributors of MCPJungle.
 
 If you're simply a user of MCPJungle, you can skip this doc.
 
+We're thrilled to have you here 🚀
+
+If you'd like to contribute to the MCPJungle Codebase/Documentation, the following approach is suggested:
+
+1. Learn the basic usage of mcpjungle. Go through the README & play around with the tool. Launch and use MCP servers.
+2. Skim through the codebase to get a general idea - [CLI](https://github.com/mcpjungle/MCPJungle/tree/main/cmd), [HTTP API](https://github.com/mcpjungle/MCPJungle/blob/main/internal/api/server.go), [MCP Proxy server](https://github.com/mcpjungle/MCPJungle/blob/main/internal/service/mcp/proxy.go) (or ask Copilot to explain the architecture to you ;) )
+3. Pick up an [issue](https://github.com/mcpjungle/MCPJungle/issues) that you like. Some of them are marked as `good first issue` but in general, pick whatever you like. Feel free to discuss it with the maintainers either on the issue thread or in [Discord](https://discord.gg/TSrUCTw9).
+4. Feel free to open up Discussions if you want to propose something new.
+5. When in doubt, just shoot a message in the Discord general chat and the maintainers will be there to help you out!
+
 ### Build for local testing
 ```bash
 # Single binary for your current system
