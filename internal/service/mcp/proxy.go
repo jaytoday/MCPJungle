@@ -61,12 +61,9 @@ func (m *MCPService) mcpProxyToolCallHandler(ctx context.Context, request mcp.Ca
 		)
 	}
 
-	// connect to the upstream MCP server that actually provides the tool
-	mcpClient, err := createMcpServerConn(ctx, server)
+	mcpClient, err := newMcpServerSession(ctx, server)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to create connection to MCP server %s: %w", serverName, err,
-		)
+		return nil, err
 	}
 	defer mcpClient.Close()
 

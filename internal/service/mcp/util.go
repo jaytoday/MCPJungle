@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mcpjungle/mcpjungle/internal/model"
+	"github.com/mcpjungle/mcpjungle/pkg/types"
 	"net"
 	"net/url"
 	"regexp"
@@ -77,45 +78,6 @@ func isLoopbackURL(rawURL string) bool {
 	return false
 }
 
-// createMcpServerConn creates a new MCP server connection and returns the client.
-func createMcpServerConn(ctx context.Context, s *model.McpServer) (*client.Client, error) {
-	var opts []transport.StreamableHTTPCOption
-	if s.BearerToken != "" {
-		// If bearer token is provided, set the Authorization header
-		o := transport.WithHTTPHeaders(map[string]string{
-			"Authorization": "Bearer " + s.BearerToken,
-		})
-		opts = append(opts, o)
-	}
-
-	c, err := client.NewStreamableHttpClient(s.URL, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create streamable HTTP client for MCP server: %w", err)
-	}
-
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "mcpjungle mcp client for " + s.URL,
-		Version: "0.1",
-	}
-	initRequest.Params.Capabilities = mcp.ClientCapabilities{}
-
-	_, err = c.Initialize(ctx, initRequest)
-	if err != nil {
-		if errors.Is(err, syscall.ECONNREFUSED) && isLoopbackURL(s.URL) {
-			return nil, fmt.Errorf(
-				"connection to the MCP server %s was refused. "+
-					"If mcpjungle is running inside Docker, use 'host.docker.internal' as your MCP server's hostname",
-				s.URL,
-			)
-		}
-		return nil, fmt.Errorf("failed to initialize connection with MCP server: %w", err)
-	}
-
-	return c, nil
-}
-
 // convertToolModelToMcpObject converts a tool model from the database to a mcp.Tool object
 func convertToolModelToMcpObject(t *model.Tool) (mcp.Tool, error) {
 	mcpTool := mcp.Tool{
@@ -135,4 +97,106 @@ func convertToolModelToMcpObject(t *model.Tool) (mcp.Tool, error) {
 	// NOTE: if more fields are added to the tool in DB, they should be set here as well
 
 	return mcpTool, nil
+}
+
+// createMcpServerConn creates a new connection with a streamable http MCP server and returns the client.
+func createMcpServerConn(ctx context.Context, s *model.McpServer) (*client.Client, error) {
+	conf, err := s.GetStreamableHTTPConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get streamable HTTP config for MCP server %s: %w", s.Name, err)
+	}
+
+	var opts []transport.StreamableHTTPCOption
+	if conf.BearerToken != "" {
+		// If bearer token is provided, set the Authorization header
+		o := transport.WithHTTPHeaders(map[string]string{
+			"Authorization": "Bearer " + conf.BearerToken,
+		})
+		opts = append(opts, o)
+	}
+
+	c, err := client.NewStreamableHttpClient(conf.URL, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create streamable HTTP client for MCP server: %w", err)
+	}
+
+	initRequest := mcp.InitializeRequest{}
+	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+	initRequest.Params.ClientInfo = mcp.Implementation{
+		Name:    "mcpjungle mcp client for " + conf.URL,
+		Version: "0.1",
+	}
+	initRequest.Params.Capabilities = mcp.ClientCapabilities{}
+
+	_, err = c.Initialize(ctx, initRequest)
+	if err != nil {
+		if errors.Is(err, syscall.ECONNREFUSED) && isLoopbackURL(conf.URL) {
+			return nil, fmt.Errorf(
+				"connection to the MCP server %s was refused. "+
+					"If mcpjungle is running inside Docker, use 'host.docker.internal' as your MCP server's hostname",
+				conf.URL,
+			)
+		}
+		return nil, fmt.Errorf("failed to initialize connection with MCP server: %w", err)
+	}
+
+	return c, nil
+}
+
+// runStdioServer runs a stdio MCP server and returns the client.
+func runStdioServer(ctx context.Context, s *model.McpServer) (*client.Client, error) {
+	conf, err := s.GetStdioConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stdio config for MCP server %s: %w", s.Name, err)
+	}
+
+	// Convert the environment map to a slice of strings in the format "KEY=VALUE"
+	envVars := make([]string, 0)
+	if conf.Env != nil {
+		for k, v := range conf.Env {
+			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+
+	c, err := client.NewStdioMCPClient(conf.Command, envVars, conf.Args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create stdio client for MCP server: %w", err)
+	}
+
+	initRequest := mcp.InitializeRequest{}
+	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+	initRequest.Params.ClientInfo = mcp.Implementation{
+		Name:    "mcpjungle mcp client for stdio",
+		Version: "0.1",
+	}
+	initRequest.Params.Capabilities = mcp.ClientCapabilities{}
+
+	_, err = c.Initialize(ctx, initRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize connection with MCP server: %w", err)
+	}
+
+	return c, nil
+}
+
+func newMcpServerSession(ctx context.Context, s *model.McpServer) (*client.Client, error) {
+	if s.Transport == types.TransportStreamableHTTP {
+		mcpClient, err := createMcpServerConn(ctx, s)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to create connection to streamable http MCP server %s: %w", s.Name, err,
+			)
+		}
+		return mcpClient, nil
+	}
+
+	// A new sub-process is spun up for each call to a STDIO mcp server.
+	// This is especially a problem for the MCP proxy server, which is expected to call tools frequently.
+	// This causes a serious performance hit, but is easy to implement so it is used for now.
+	// TODO: Think of a better solution, ie, re-use connections to stdio MCP servers.
+	mcpClient, err := runStdioServer(ctx, s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to run stdio MCP server %s: %w", s.Name, err)
+	}
+	return mcpClient, nil
 }

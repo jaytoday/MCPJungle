@@ -7,7 +7,7 @@ import (
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mcpjungle/mcpjungle/internal/model"
-	"github.com/mcpjungle/mcpjungle/internal/types"
+	"github.com/mcpjungle/mcpjungle/pkg/types"
 	"log"
 )
 
@@ -87,11 +87,9 @@ func (m *MCPService) InvokeTool(ctx context.Context, name string, args map[strin
 		)
 	}
 
-	mcpClient, err := createMcpServerConn(ctx, serverModel)
+	mcpClient, err := newMcpServerSession(ctx, serverModel)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to create connection to MCP server %s: %w", serverName, err,
-		)
+		return nil, err
 	}
 	defer mcpClient.Close()
 

@@ -4,33 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/mcpjungle/mcpjungle/pkg/types"
 	"io"
 	"net/http"
 )
 
-// Server represents an MCP server registered in the MCPJungle registry.
-type Server struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-}
-
-// RegisterServerInput is the input structure for registering a new MCP server.
-type RegisterServerInput struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-
-	// URL is mandatory and must be a valid http/https URL (eg- https://example.com/mcp).
-	// MCPJungle only supports streamable HTTP transport as of now.
-	URL string `json:"url"`
-
-	// BearerToken is an optional token used for authenticating requests to the MCP server.
-	// It is useful when the upstream MCP server requires static tokens (e.g., API tokens) for authentication.
-	BearerToken string `json:"bearer_token,omitempty"`
-}
-
 // RegisterServer registers a new MCP server with the registry.
-func (c *Client) RegisterServer(server *RegisterServerInput) (*Server, error) {
+func (c *Client) RegisterServer(server *types.RegisterServerInput) (*types.McpServer, error) {
 	u, _ := c.constructAPIEndpoint("/servers")
 	body, err := json.Marshal(server)
 	if err != nil {
@@ -54,7 +34,7 @@ func (c *Client) RegisterServer(server *RegisterServerInput) (*Server, error) {
 		return nil, fmt.Errorf("request failed with status: %d, message: %s", resp.StatusCode, body)
 	}
 
-	var registeredServer Server
+	var registeredServer types.McpServer
 	if err := json.NewDecoder(resp.Body).Decode(&registeredServer); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -62,7 +42,7 @@ func (c *Client) RegisterServer(server *RegisterServerInput) (*Server, error) {
 }
 
 // ListServers fetches the list of registered servers.
-func (c *Client) ListServers() ([]*Server, error) {
+func (c *Client) ListServers() ([]*types.McpServer, error) {
 	u, _ := c.constructAPIEndpoint("/servers")
 	req, err := c.newRequest(http.MethodGet, u, nil)
 	if err != nil {
@@ -80,7 +60,7 @@ func (c *Client) ListServers() ([]*Server, error) {
 		return nil, fmt.Errorf("request failed with status: %d, message: %s", resp.StatusCode, body)
 	}
 
-	var servers []*Server
+	var servers []*types.McpServer
 	if err := json.NewDecoder(resp.Body).Decode(&servers); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

@@ -11,25 +11,26 @@ import (
 // Tool registration is on best-effort basis and does not fail the server registration.
 // Registered tools are also added to the MCP proxy server.
 func (m *MCPService) RegisterMcpServer(ctx context.Context, s *model.McpServer) error {
-	if err := validateServerName(s.Name); err != nil {
+	var err error
+
+	if err = validateServerName(s.Name); err != nil {
 		return err
 	}
+	// TODO: if transport is http, validate the URL
+	//  if stdio, verify that command is not empty string
 
-	// TODO: validate the URL to ensure it is a valid HTTP/HTTPS URL (streamable http compliant)
-
-	// test that the server is reachable and is MCP-compliant
-	c, err := createMcpServerConn(ctx, s)
+	mcpClient, err := newMcpServerSession(ctx, s)
 	if err != nil {
-		return fmt.Errorf("failed to connect to MCP server %s: %w", s.Name, err)
+		return err
 	}
-	defer c.Close()
+	defer mcpClient.Close()
 
 	// register the server in the DB
 	if err := m.db.Create(s).Error; err != nil {
 		return fmt.Errorf("failed to register mcp server: %w", err)
 	}
 
-	if err = m.registerServerTools(ctx, s, c); err != nil {
+	if err = m.registerServerTools(ctx, s, mcpClient); err != nil {
 		return fmt.Errorf("failed to register tools for MCP server %s: %w", s.Name, err)
 	}
 	return nil
