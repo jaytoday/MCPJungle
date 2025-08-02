@@ -264,7 +264,7 @@ Here's an example configuration file (let's call it `filesystem.json`) for a MCP
   "transport": "stdio",
   "description": "filesystem mcp server",
   "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-filesystem", "./data"]
+  "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
 }
 ```
 
