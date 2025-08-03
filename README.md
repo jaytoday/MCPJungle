@@ -20,23 +20,23 @@ MCPJungle is a single source-of-truth registry for all [Model Context Protocol](
 
 <p align="center">MCPJungle is the only MCP Server your AI agents need to connect to!</p>
 
-## Who should use MCPJungle?
+# Who should use MCPJungle?
 1. **Developers** using MCP Clients like Claude & Cursor that need to access MCP servers for tool-calling
 2. **Developers** building production-grade AI Agents that need to access MCP servers with built-in security, privacy and Access Control.
 3. **Organisations** wanting to view & manage all MCP client-server interactions from a central place. Hosted in their own datacenter 🔒
 
-## 📋 Table of Contents
+# 📋 Table of Contents
 
 - [Quick Start guide](#quickstart-guide)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Server](#server)
-    - [Running server inside Docker](#running-inside-docker)
-    - [Running directly on the host machine](#running-directly)
+    - [Running mcpjungle server inside Docker](#running-inside-docker)
+    - [Running mcpjungle server directly on the host machine](#running-directly)
   - [Client](#client)
-    - [Adding Streamable HTTP servers](#registering-streamable-http-based-servers)
-    - [Adding STDIO servers](#registering-stdio-based-servers)
-    - [Removing servers](#deregistering-mcp-servers)
+    - [Adding Streamable HTTP-based MCP servers](#registering-streamable-http-based-servers)
+    - [Adding STDIO-based MCP servers](#registering-stdio-based-servers)
+    - [Removing MCP servers](#deregistering-mcp-servers)
   - [Connect to mcpjungle from Claude](#claude)
   - [Connect to mcpjungle from Cursor](#cursor)
   - [Enabling/Disabling Tools globally](#enablingdisabling-tools)
@@ -46,19 +46,19 @@ MCPJungle is a single source-of-truth registry for all [Model Context Protocol](
 - [Limitations](#current-limitations-)
 - [Contributing](#contributing-)
 
-## Quickstart guide
+# Quickstart guide
 This quickstart guide will show you how to:
 1. Start the MCPJungle server locally using docker-compose
 2. Register a simple MCP server in mcpjungle
 3. Connect your Claude to mcpjungle to access your MCP tools
 
-### Start the server
+## Start the server
 ```bash
 curl -O https://raw.githubusercontent.com/mcpjungle/MCPJungle/refs/heads/main/docker-compose.yaml
 docker-compose up -d
 ```
 
-### Register MCP servers
+## Register MCP servers
 Download the client binary either using brew or from the [Releases](https://github.com/mcpjungle/MCPJungle/releases).
 ```bash
 brew install mcpjungle/mcpjungle/mcpjungle
@@ -69,7 +69,7 @@ Add the [context7](https://context7.com/) remote MCP server to mcpjungle
 mcpjungle register --name context7 --url https://mcp.context7.com/mcp
 ```
 
-### Connect to mcpjungle
+## Connect to mcpjungle
 
 Add the following configuration in your Claude MCP Servers:
 ```json
@@ -100,7 +100,7 @@ Claude will then attempt to call the `context7__get-library-docs` tool via MCPJu
 
 Congratulations 🎉 You have successfully registered a remote MCP server in MCPJungle and called one of its tools via Claude
 
-## Installation
+# Installation
 
 > [!WARNING]
 > MCPJungle is **BETA** software.
@@ -131,42 +131,53 @@ MCPJungle provides a Docker image which is useful for running the registry serve
 docker pull mcpjungle/mcpjungle
 ```
 
-## Usage
+# Usage
 MCPJungle has a Client-Server architecture and the binary lets you run both the Server and the Client.
 
-### Server
+## Server
 The MCPJungle server is responsible for managing all the MCP servers registered in it and providing a unified MCP gateway for AI Agents to discover and call tools provided by these registered servers.
 
 The gateway itself runs over streamable http transport and is accessible at the `/mcp` endpoint.
 
-#### Running inside Docker
+### Running inside Docker
 For running the MCPJungle server locally, docker compose is the recommended way:
 ```shell
 curl -O https://raw.githubusercontent.com/mcpjungle/MCPJungle/refs/heads/main/docker-compose.yaml
 docker-compose up -d
 ```
 
-The default mcpjungle docker image is very lightweight - it only contains a minimal base image and the mcpjungle binary.
+This will start the MCPJungle server along with a persistent Postgres database container.
 
-This is highly suitable for production deployments.
+You can quickly verify that the server is running:
+```bash
+curl http://localhost:8080/health
+```
 
 If you plan on registering stdio-based MCP servers that rely on `npx` or `uvx`, use mcpjungle's `stdio` tagged docker image instead.
 ```bash
 MCPJUNGLE_IMAGE_TAG=latest-stdio docker-compose up -d
 ```
 
-This image is significantly larger. But it is very convenient for running locally when you rely heavily on stdio-based MCP servers.
+This image is significantly larger. But it is very convenient and recommended for running locally when you rely on stdio-based MCP servers.
 
 For example, if you only want to register remote mcp servers like context7 and deepwiki, you can use the standard (minimal) image.
 
-But if you also want to use stdio-based servers like filesystem, ClojureMCP, github, etc., you should use the `stdio` image instead.
-
-You can see the definitions of the [standard Docker image](./Dockerfile) and the [stdio Docker image](./stdio.Dockerfile).
+But if you also want to use stdio-based servers like `filesystem`, `time`, `github`, etc., you should use the `stdio`-tagged image instead.
 
 > [!NOTE]
 > If your stdio servers rely on tools other than `npx` or `uvx`, you will have to create a custom docker image that includes those dependencies along with the mcpjungle binary.
 
-#### Running directly
+**Production Deployment**
+
+The default [MCPJungle Docker image](https://hub.docker.com/r/mcpjungle/mcpjungle) is very lightweight - it only contains a minimal base image and the `mcpjungle` binary.
+
+It is therefore suitable and recommended for production deployments.
+
+For the database, we recommend you deploy a separate Postgres DB cluster and supply its endpoint to mcpjungle (see [Database](#database) section below).
+
+You can see the definitions of the [standard Docker image](./Dockerfile) and the [stdio Docker image](./stdio.Dockerfile).
+
+### Running directly
 You can also run the server directly on your host machine using the binary:
 
 ```bash
@@ -175,24 +186,32 @@ mcpjungle start
 
 This starts the main registry server and MCP gateway, accessible on port `8080` by default.
 
-The server relies on a database and by default, creates a SQLite DB in the current working directory.
+
+### Database
+The mcpjungle server relies on a database and by default, creates a SQLite DB in the current working directory.
+
+This is okay when you're just testing things out locally.
+
 Alternatively, you can supply a DSN for a Postgresql database to the server:
 
 ```bash
 export DATABASE_URL=postgres://admin:root@localhost:5432/mcpjungle_db
+
+#run as container
+docker run mcpjungle/mcpjungle:latest
+
+# or run directly
 mcpjungle start
 ```
 
-If you use docker-compose, the postgres DB is automatically created and managed for you.
-
-### Client
+## Client
 Once the server is up, you can use the mcpjungle CLI to interact with it.
 
 MCPJungle currently supports MCP servers using [stdio](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#stdio) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) Transports.
 
 Let's see how to register them in mcpjungle.
 
-#### Registering streamable HTTP-based servers
+### Registering streamable HTTP-based servers
 Let's say you're already running a streamable http MCP server locally at `http://127.0.0.1:8000/mcp` which provides basic math tools like `add`, `subtract`, etc.
 
 You can register this MCP server with MCPJungle:
@@ -255,7 +274,7 @@ The config file format for registering a Streamable HTTP-based MCP server is:
 }
 ```
 
-#### Registering STDIO-based servers
+### Registering STDIO-based servers
 
 Here's an example configuration file (let's call it `filesystem.json`) for a MCP server that uses the STDIO transport:
 ```json
@@ -288,7 +307,18 @@ The config file format for registering a STDIO-based MCP server is:
 }
 ```
 
-#### Deregistering MCP servers
+**Limitation** 🚧
+
+MCPJungle creates a new connection when a tool is called. This means a new sub-process for a STDIO mcp server is started for every tool call.
+
+This has some performance overhead but ensures that there are no memory leaks.
+
+But it also means that currently MCPJungle doesn't support stateful connections with your MCP server.
+
+We want to hear your feedback to improve this mechanism, feel free to create an issue, start a discussion or just reach out on Discord.
+
+
+### Deregistering MCP servers
 You can remove a MCP server from mcpjungle.
 
 ```bash
@@ -298,10 +328,10 @@ mcpjungle deregister filesystem
 
 Once removed, this mcp server and its tools are no longer available to you or your MCP clients.
 
-### Integration with other MCP Clients
+## Integration with other MCP Clients
 Assuming that MCPJungle is running on `http://localhost:8080`, use the following configurations to connect to it:
 
-#### Claude
+### Claude
 ```json
 {
   "mcpServers": {
@@ -317,7 +347,7 @@ Assuming that MCPJungle is running on `http://localhost:8080`, use the following
 }
 ```
 
-#### Cursor
+### Cursor
 ```json
 {
   "mcpServers": {
@@ -328,7 +358,7 @@ Assuming that MCPJungle is running on `http://localhost:8080`, use the following
 }
 ```
 
-### Enabling/Disabling Tools
+## Enabling/Disabling Tools
 You can enable or disable a specific tool or all the tools provided by an MCP Server.
 
 If a tool is disabled, it is not available via the MCPJungle Proxy, so no MCP clients can view or call it.
@@ -352,7 +382,7 @@ A disabled tool is still accessible via mcpjungle's HTTP API, so humans can stil
 > [!NOTE]
 > When a new server is registered in MCPJungle, all its tools are **enabled** by default.
 
-### Authentication
+## Authentication
 MCPJungle currently supports authentication if your Streamable HTTP MCP Server accepts static tokens for auth.
 
 This is useful when using SaaS-provided MCP Servers like HuggingFace, Stripe, etc. which require your API token for authentication.
@@ -376,7 +406,7 @@ Or from your configuration file
 
 Support for Oauth flow is coming soon!
 
-### Enterprise Features 🔒
+## Enterprise Features 🔒
 
 If you're running MCPJungle in your organisation, we recommend running the Server in the `production` mode:
 ```bash
@@ -404,7 +434,7 @@ This will create an admin user in the server and store its API access token in y
 
 You can then use the mcpjungle cli to make authenticated requests to the server.
 
-#### Access Control
+### Access Control
 
 In `development` mode, all MCP clients have full access to all the MCP servers registered in MCPJungle Proxy.
 
@@ -448,10 +478,10 @@ A client that has access to a particular server this way can view and call all t
 > [!NOTE]
 > If you don't specify the `--allow` flag, the MCP client will not be able to access any MCP servers.
 
-## Current limitations 🚧
+# Current limitations 🚧
 We're not perfect yet, but we're working hard to get there!
 
-#### 1. MCPJungle doesn't maintain any long-running connections to the registered MCP Servers
+### 1. MCPJungle doesn't maintain any long-running connections to the registered MCP Servers
 When you call a tool in a Streamable HTTP server, mcpjungle creates a new connection to the server to serve the request.
 
 When you call a tool in a STDIO server, mcpjungle creates a new connection and starts a new sub-process to run this server.
@@ -466,11 +496,11 @@ It also means that if you rely on stateful connections with your MCP server, mcp
 
 We plan on improving this mechanism in future releases and are open to ideas from the community!
 
-#### 2. MCPJungle does not support OAuth flow for authentication.
+### 2. MCPJungle does not support OAuth flow for authentication.
 This is a work in progress.
 
 We're collecting more feedback on how people use OAuth with MCP servers, so feel free to start a Discussion or open an issue to share your use case.
 
-## Contributing 💻
+# Contributing 💻
 
 If you're interested in contributing to MCPJungle, see [Developer Docs](./docs/developer.md).
