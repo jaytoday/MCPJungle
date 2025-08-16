@@ -6,6 +6,17 @@ If you're simply a user of MCPJungle, you can skip this doc.
 
 We're thrilled to have you here 🚀
 
+### Basic Guidelines
+MCPJungle always follows **minimalism**.
+
+Whenever we want to implement some functionality or fix an issue, we figure out the least amount of changes required to ship something that works well and doesn't break anything else.
+
+Any other extras or improvements on top are always guided by **user feedback** and never by an engineer's desire to work on something.
+
+This keeps mcpjungle lean, protects it from over-engineering and makes us the TOP choice for our users 🚀
+
+### Getting started
+
 If you'd like to contribute to the MCPJungle Codebase/Documentation, the following approach is suggested:
 
 1. Learn the basic usage of mcpjungle. Go through the README & play around with the tool. Launch and use MCP servers.
