@@ -25,7 +25,7 @@ var apiClient *client.Client
 
 var rootCmd = &cobra.Command{
 	Use:   "mcpjungle",
-	Short: "MCP tool catalog",
+	Short: "MCP Gateway for AI Agents",
 
 	SilenceErrors: true,
 	SilenceUsage:  true,
