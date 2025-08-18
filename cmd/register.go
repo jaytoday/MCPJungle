@@ -131,7 +131,7 @@ func runRegisterMCPServer(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println("The following tools are now available from this server:")
 	for i, tool := range tools {
-		fmt.Printf("%d. %s: %s\n\n", i, tool.Name, tool.Description)
+		fmt.Printf("%d. %s: %s\n\n", i+1, tool.Name, tool.Description)
 	}
 
 	return nil
