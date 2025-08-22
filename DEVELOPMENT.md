@@ -127,7 +127,7 @@ This will create a new release under Releases and also make it available via Hom
 - Go 1.21 or later
 - Docker and Docker Compose
 - SQLite3 (for local development)
-- Node.js (for MCP Inspector)
+- Node.js (optional, for MCP Inspector)
 
 ### Quick Start
 ```bash

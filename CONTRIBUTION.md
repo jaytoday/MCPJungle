@@ -32,7 +32,7 @@ See the [DEVELOPMENT.md](DEVELOPMENT.md) file for detailed setup instructions.
 #### Coding Standards
 
 - **Go Code**:
-  - Follow the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
+  - Follow the [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments)
   - Use `gofmt` to format your code
   - Run `go vet` before submitting your changes
   - Ensure all tests pass with `go test ./...`
@@ -87,13 +87,11 @@ See the [DEVELOPMENT.md](DEVELOPMENT.md) file for detailed setup instructions.
 
 ### Releasing
 
-Only project maintainers can create releases. The process is:
+Only project maintainers can create releases. The current process is:
 
-1. Update version numbers in relevant files
-2. Create a release branch
-3. Create a tag for the release
-4. Build and publish artifacts using goreleaser
-5. Create a GitHub release with release notes
+1. A new release is always made from the `main` branch. Keep it up-to-date and clean.
+2. Create a tag for the release
+3. Build and publish artifacts using goreleaser
 
 ### Community
 
