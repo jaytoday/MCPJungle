@@ -307,6 +307,8 @@ The config file format for registering a STDIO-based MCP server is:
 }
 ```
 
+You can also watch a quick video on [How to register a STDIO-based MCP server](https://youtu.be/YqHiuexR5fw).
+
 > [!TIP]
 > If your STDIO server fails or throws errors for some reason, check the mcpjungle server's logs to view its `stderr` output.
 
@@ -360,6 +362,8 @@ Assuming that MCPJungle is running on `http://localhost:8080`, use the following
   }
 }
 ```
+
+You can watch a quick video on [How to connect Cursor to MCPJungle](https://youtu.be/SaUqj-eLPnw).
 
 ## Enabling/Disabling Tools
 You can enable or disable a specific tool or all the tools provided by an MCP Server.
