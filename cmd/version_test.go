@@ -20,13 +20,13 @@ func TestGetVersion(t *testing.T) {
 		},
 		{
 			name:       "Version is dev",
-			setVersion: "dev",
-			expect:     "dev",
+			setVersion: defaultVersion,
+			expect:     defaultVersion,
 		},
 		{
 			name:       "default to dev when empty",
 			setVersion: "",
-			expect:     "dev",
+			expect:     defaultVersion,
 		},
 		{
 			name:       "numeric injected version prefixed with v",
@@ -38,14 +38,14 @@ func TestGetVersion(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			Version = tc.setVersion
-			got := GetVersion()
+			got := getVersion()
 			if got != tc.expect {
 				// Handle the case where build info might override empty version
-				if tc.setVersion == "" && got != "dev" && got != "(devel)" {
+				if tc.setVersion == "" && got != defaultVersion && got != "(devel)" {
 					// This is acceptable if build info provides a version
 					return
 				}
-				t.Fatalf("GetVersion() = %q, want %q", got, tc.expect)
+				t.Fatalf("getVersion() = %q, want %q", got, tc.expect)
 			}
 		})
 	}

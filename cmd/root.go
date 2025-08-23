@@ -91,7 +91,7 @@ func Execute() error {
 	rootCmd.SetHelpFunc(customHelpFunc(defaultHelpFunc))
 
 	// Enable built-in --version behavior
-	rootCmd.Version = GetVersion()
+	rootCmd.Version = getVersion()
 	rootCmd.SetVersionTemplate(asciiArt + "\nMCPJungle {{.Version}}\n")
 
 	// only print usage and error messages if the command usage is incorrect

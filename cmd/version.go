@@ -7,15 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const defaultVersion = "dev"
+
 var (
 	// Version can be overridden at build time using:
 	// go build -ldflags="-X 'github.com/mcpjungle/mcpjungle/cmd.Version=v1.2.3'"
-	Version = "dev"
+	Version = defaultVersion
 )
 
-// GetVersion returns the CLI version string.
-func GetVersion() string {
-	if Version != "" && Version != "dev" {
+// getVersion returns the CLI version string.
+func getVersion() string {
+	if Version != "" && Version != defaultVersion {
 		return normalizeVersion(Version)
 	}
 
@@ -23,7 +25,7 @@ func GetVersion() string {
 		return normalizeVersion(info.Main.Version)
 	}
 
-	return "dev"
+	return defaultVersion
 }
 
 // normalizeVersion ensures a consistent version format:
@@ -45,7 +47,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// We want the extra newline for proper formatting
 		fmt.Print(asciiArt) //nolint:staticcheck
-		fmt.Printf("MCPJungle %s\n", GetVersion())
+		fmt.Printf("MCPJungle %s\n", getVersion())
 	},
 	Annotations: map[string]string{
 		"group": string(subCommandGroupBasic),
