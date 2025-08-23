@@ -41,7 +41,16 @@ See the [DEVELOPMENT.md](DEVELOPMENT.md) file for detailed setup instructions.
 
 ### Before Making Significant Changes
 
-**If you plan on opening a PR for a significant change, first open a Discussion to align with the community on the changes you plan on making.** This helps ensure your effort is well-directed and aligns with project priorities.
+1. **If you plan on opening a PR for a significant change, first open a Discussion to align with the community on the changes you plan on making.**
+This helps ensure your effort is well-directed and aligns with project priorities.
+
+2. **Sending Pull Requests with large amounts of AI-generated Code is discouraged.**
+This makes it very hard for the maintainers to review your code.
+
+For any code that you generate using AI tools, please make sure to:
+1. Run it. Does it all work as expected?
+2. Run tests. Do they all pass?
+3. Review it yourself. Does it fit into the rest of the codebase? Can it be reduced?
 
 ### Pull Request Process
 
