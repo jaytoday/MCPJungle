@@ -54,6 +54,9 @@ go test -cover ./...
 
 # Run specific test
 go test ./internal/service/mcp
+
+# Run Sanity check script
+./scripts/test-mcpjungle.sh
 ```
 
 ### 3. Database Development
