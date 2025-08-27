@@ -35,9 +35,10 @@ var (
 
 var startServerCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start the MCP registry server",
+	Short: "Start the MCPJungle server",
 	Long: "Starts the MCPJungle HTTP registry server and the MCP Proxy server.\n" +
-		"The server is started in Development mode by default, which is ideal for individual users.\n",
+		"The server is started in development mode by default, which is ideal for individual users.\n" +
+		"Teams & Enterprises should run mcpjungle in production mode.\n",
 	RunE: runStartServer,
 	Annotations: map[string]string{
 		"group": string(subCommandGroupBasic),
@@ -50,14 +51,14 @@ func init() {
 		&startServerCmdBindPort,
 		"port",
 		"",
-		fmt.Sprintf("port to bind the server to (overrides env var %s)", BindPortEnvVar),
+		fmt.Sprintf("port to bind the HTTP server to (overrides env var %s)", BindPortEnvVar),
 	)
 	startServerCmd.Flags().BoolVar(
 		&startServerCmdProdEnabled,
 		"prod",
 		false,
 		fmt.Sprintf(
-			"Run the server in Production mode (suitable for enterprises)."+
+			"Run the server in Production mode (ideal for teams and enterprises)."+
 				" Alternatively, set the %s environment variable ('%s' | '%s')",
 			ServerModeEnvVar, model.ModeDev, model.ModeProd,
 		),
