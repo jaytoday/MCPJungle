@@ -50,14 +50,14 @@ MCPJungle is a single source-of-truth registry for all [Model Context Protocol](
 
 # Quickstart guide
 This quickstart guide will show you how to:
-1. Start the MCPJungle server locally using docker-compose
+1. Start the MCPJungle server locally using `docker compose`
 2. Register a simple MCP server in mcpjungle
 3. Connect your Claude to mcpjungle to access your MCP tools
 
 ## Start the server
 ```bash
 curl -O https://raw.githubusercontent.com/mcpjungle/MCPJungle/refs/heads/main/docker-compose.yaml
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Register MCP servers
@@ -148,11 +148,13 @@ For running the MCPJungle server locally, docker compose is the recommended way:
 # mcpjungle will run in `development` mode by default.
 curl -O https://raw.githubusercontent.com/mcpjungle/MCPJungle/refs/heads/main/docker-compose.yaml
 
+docker compose up -d
+
 # docker-compose.prod.yaml is optimized for orgs deploying mcpjungle on a remote server for multiple users.
 # mcpjungle will run in `production` mode by default, which enables enterprise features.
 curl -O https://raw.githubusercontent.com/mcpjungle/MCPJungle/refs/heads/main/docker-compose.prod.yaml
 
-docker-compose up -d
+docker compose -f docker-compose.prod.yaml up -d
 ```
 
 This will start the MCPJungle server along with a persistent Postgres database container.
@@ -164,7 +166,7 @@ curl http://localhost:8080/health
 
 If you plan on registering stdio-based MCP servers that rely on `npx` or `uvx`, use mcpjungle's `stdio` tagged docker image instead.
 ```bash
-MCPJUNGLE_IMAGE_TAG=latest-stdio docker-compose up -d
+MCPJUNGLE_IMAGE_TAG=latest-stdio docker compose up -d
 ```
 
 > [!NOTE]
@@ -232,7 +234,7 @@ You can register this MCP server with MCPJungle:
 mcpjungle register --name calculator --description "Provides some basic math tools" --url http://127.0.0.1:8000/mcp
 ```
 
-If you used docker-compose to run the server, and you're not on Linux, you will have to use `host.docker.internal` instead of your local loopback address.
+If you used docker compose to run the server, and you're not on Linux, you will have to use `host.docker.internal` instead of your local loopback address.
 ```bash
 mcpjungle register --name calculator --description "Provides some basic math tools" --url http://host.docker.internal:8000/mcp
 ```
@@ -513,8 +515,8 @@ mcpjungle start --prod
 export SERVER_MODE=production
 mcpjungle start
 
-# this also works when running the server via docker-compose
-SERVER_MODE=production docker-compose up
+# Or use the production docker compose file as described above
+docker compose -f docker-compose.prod.yaml up -d
 ```
 
 By default, mcpjungle server runs in `development` mode which is ideal for individuals running it locally.
