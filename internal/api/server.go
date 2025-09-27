@@ -3,6 +3,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,8 @@ import (
 	"github.com/mcpjungle/mcpjungle/internal/service/toolgroup"
 	"github.com/mcpjungle/mcpjungle/internal/service/user"
 	"github.com/mcpjungle/mcpjungle/internal/telemetry"
+	"github.com/mcpjungle/mcpjungle/pkg/types"
+	"github.com/mcpjungle/mcpjungle/pkg/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
@@ -157,6 +160,16 @@ func (s *Server) setupRouter() (*gin.Engine, error) {
 		"/health",
 		func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
+		},
+	)
+
+	r.GET(
+		"/metadata",
+		func(c *gin.Context) {
+			m := &types.ServerMetadata{
+				Version: version.GetVersion(),
+			}
+			c.JSON(http.StatusOK, m)
 		},
 	)
 
