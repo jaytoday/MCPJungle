@@ -47,7 +47,7 @@ var (
 var startServerCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the MCPJungle server",
-	Long: "Starts the MCPJungle HTTP registry server and the MCP Proxy server.\n" +
+	Long: "Starts the MCPJungle HTTP Registry and the MCP Gateway\n\n" +
 		"The server is started in development mode by default, which is ideal for running mcpjungle locally.\n" +
 		"Teams & Enterprises should run mcpjungle in enterprise mode.\n\n" +
 		"By default, this command creates a SQLite database file in the current directory (if it doesn't already exist).\n" +
@@ -227,6 +227,7 @@ func getPostgresDSN() (string, bool, error) {
 	}
 	// password can be empty, so no default value
 
+	// todo: support sslmode param in the dsn constructed here
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		url.QueryEscape(pgUser),
