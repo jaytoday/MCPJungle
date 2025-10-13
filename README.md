@@ -247,6 +247,9 @@ Once the server is up, you can use the mcpjungle CLI to interact with it.
 
 MCPJungle currently supports MCP servers using [stdio](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#stdio) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) Transports.
 
+> [!NOTE]
+> Support for SSE (server-sent events) also exists but is currently not mature.
+
 Let's see how to register them in mcpjungle.
 
 ### Registering streamable HTTP-based servers
