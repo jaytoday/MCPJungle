@@ -40,6 +40,7 @@ MCPJungle is a single source-of-truth registry for all [Model Context Protocol](
   - [Connect to mcpjungle from Claude](#claude)
   - [Connect to mcpjungle from Cursor](#cursor)
   - [Enabling/Disabling Tools globally](#enablingdisabling-tools)
+  - [Prompts](#prompts)
   - [Tool Groups](#tool-groups)
   - [Authentication](#authentication)
   - [Enterprise features](#enterprise-features-)
@@ -437,28 +438,53 @@ Assuming that MCPJungle is running on `http://localhost:8080`, use the following
 You can watch a quick video on [How to connect Cursor to MCPJungle](https://youtu.be/SaUqj-eLPnw).
 
 ## Enabling/Disabling Tools
-You can enable or disable a specific tool or all the tools provided by an MCP Server.
+You can disable and re-enable a specific tool or all the tools provided by an MCP Server.
 
-If a tool is disabled, it is not available via the MCPJungle Proxy, so no MCP clients can view or call it.
+If a tool is disabled, it is not available via the MCPJungle Proxy or any of the Tool Groups, so no MCP clients can view or call it.
+
+You can disable and enable Prompts as well.
 
 ```bash
 # disable the `get-library-docs` tool provided by the `context7` MCP server
-mcpjungle disable context7__get-library-docs
+mcpjungle disable tool context7__get-library-docs
 
 # re-enable the tool
-mcpjungle enable context7__get-library-docs
+mcpjungle enable tool context7__get-library-docs
 
-# disable all tools provided by the `context7` MCP server
-mcpjungle disable context7
+# disable all tools in context7
+mcpjungle disable tool context7
 
-# re-enable all tools of `context7`
-mcpjungle enable context7
+# disable the whole `context7` MCP server (disables all tools & prompts)
+mcpjungle disable server context7
+
+# re-enable `context7`
+mcpjungle enable server context7
+
+# disable a prompt
+mcpjungle disable prompt "huggingface_Model Details"
+
+# disable all prompts in context7
+mcpjungle disable prompt context7
 ```
 
 A disabled tool is still accessible via mcpjungle's HTTP API, so humans can still manage it from the CLI (or any other HTTP client).
 
 > [!NOTE]
-> When a new server is registered in MCPJungle, all its tools are **enabled** by default.
+> When a new server is registered in MCPJungle, all its tools & prompts are **enabled** by default.
+
+## Prompts
+Mcpjungle supports [Prompts](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts).
+
+When you register a new MCP server, if it provides prompts, they're registered in mcpjungle too.
+
+Here are some examples of how you can interact with Prompts using the CLI:
+```bash
+# list all prompts provided by the huggingface mcp
+$ mcpjungle list prompts --server huggingface
+
+# Retrieve the "Model Details" prompt, supply custom arguments
+$ mcpjungle get prompt "huggingface__Model Details" --arg model_id="openai/gpt-oss-120b"
+```
 
 ## Tool Groups
 As you add more MCP servers to MCPJungle, the number of tools available through the Gateway can grow significantly.
@@ -547,6 +573,9 @@ You can also watch a [Video on using Tool Groups](https://youtu.be/A21rfGgo38A).
 > [!NOTE]
 > The exclusion is always applied at the end.
 > So if you add a tool to `included_tools` and also list it in `excluded_tools`, it will be excluded from the final group.
+
+#### Limitation 🚧
+[Prompts](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts) are currently not supported in Tool Groups. We're working to fix this [issue](https://github.com/mcpjungle/MCPJungle/issues/136) 🛠️
 
 ### Managing tool groups
 You can currently perform operations like listing all groups, viewing details of a specific group and deleting a group.
