@@ -12,10 +12,10 @@ import (
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create resources",
+	Short: "Create entities in mcpjungle",
 	Annotations: map[string]string{
 		"group": string(subCommandGroupAdvanced),
-		"order": "3",
+		"order": "4",
 	},
 }
 

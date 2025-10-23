@@ -1,19 +1,23 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get information about a specific resource",
+	Short: "Get entities like Prompts and Tool Groups",
 	Annotations: map[string]string{
 		"group": string(subCommandGroupAdvanced),
-		"order": "7",
+		"order": "1",
 	},
 }
+
+var getPromptArgs map[string]string
 
 var getGroupCmd = &cobra.Command{
 	Use:   "group [name]",
@@ -24,9 +28,30 @@ var getGroupCmd = &cobra.Command{
 	RunE: runGetGroup,
 }
 
-func init() {
-	getCmd.AddCommand(getGroupCmd)
+var getPromptCmd = &cobra.Command{
+	Use:   "prompt [name]",
+	Args:  cobra.ExactArgs(1),
+	Short: "Get a prompt template",
+	Long: "Retrieve a prompt template from an MCP server with optional arguments.\n" +
+		"The prompt will be rendered with the provided arguments and returned as structured messages.",
+	Example: `  # Get a basic prompt
+  mcpjungle get prompt github__code-review
 
+  # Get a prompt with arguments
+  mcpjungle get prompt github__code-review --arg code="def hello(): print('world')" --arg language="python"`,
+	RunE: runGetPrompt,
+}
+
+func init() {
+	getPromptCmd.Flags().StringToStringVar(
+		&getPromptArgs,
+		"arg",
+		nil,
+		"Arguments to pass to the prompt (this flag can be specified multiple times)",
+	)
+
+	getCmd.AddCommand(getGroupCmd)
+	getCmd.AddCommand(getPromptCmd)
 	rootCmd.AddCommand(getCmd)
 }
 
@@ -88,6 +113,44 @@ func runGetGroup(cmd *cobra.Command, args []string) error {
 		"NOTE: If a tool in this group is disabled globally or has been deleted, " +
 			"then it will not be available via the group's MCP endpoint.",
 	)
+
+	return nil
+}
+
+func runGetPrompt(cmd *cobra.Command, args []string) error {
+	name := args[0]
+
+	// Convert CLI args to proper format
+	arguments := make(map[string]string)
+	for k, v := range getPromptArgs {
+		arguments[k] = v
+	}
+
+	result, err := apiClient.GetPromptWithArgs(name, arguments)
+	if err != nil {
+		return fmt.Errorf("failed to get prompt: %w", err)
+	}
+
+	// Pretty print the result
+	cmd.Printf("Prompt: %s\n", name)
+	if result.Description != "" {
+		cmd.Printf("Description: %s\n", result.Description)
+	}
+	cmd.Println("\nGenerated Messages:")
+	cmd.Println("=" + strings.Repeat("=", 50))
+
+	for i, message := range result.Messages {
+		cmd.Printf("\nMessage %d (%s):\n", i+1, message.Role)
+		cmd.Println("-" + strings.Repeat("-", 30))
+
+		// Format the content nicely
+		contentBytes, err := json.MarshalIndent(message.Content, "", "  ")
+		if err != nil {
+			cmd.Printf("Content: %+v\n", message.Content)
+		} else {
+			cmd.Printf("Content: %s\n", string(contentBytes))
+		}
+	}
 
 	return nil
 }

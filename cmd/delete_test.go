@@ -11,12 +11,12 @@ func TestDeleteCommandStructure(t *testing.T) {
 
 	// Test command properties
 	testhelpers.AssertEqual(t, "delete", deleteCmd.Use)
-	testhelpers.AssertEqual(t, "Delete resources", deleteCmd.Short)
+	testhelpers.AssertEqual(t, "Delete entities from mcpjungle", deleteCmd.Short)
 
 	// Test command annotations
 	annotationTests := []testhelpers.CommandAnnotationTest{
 		{Key: "group", Expected: string(subCommandGroupAdvanced)},
-		{Key: "order", Expected: "4"},
+		{Key: "order", Expected: "5"},
 	}
 	testhelpers.TestCommandAnnotations(t, deleteCmd.Annotations, annotationTests)
 

@@ -8,10 +8,10 @@ import (
 
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "Delete resources",
+	Short: "Delete entities from mcpjungle",
 	Annotations: map[string]string{
 		"group": string(subCommandGroupAdvanced),
-		"order": "4",
+		"order": "5",
 	},
 }
 
